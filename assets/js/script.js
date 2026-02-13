@@ -70,6 +70,7 @@ function calculateResult() {
         case '*': result = l * r; break;
         case '/': result = r !== 0 ? l / r : 'Error'; break;
         case 'P':
+            // Permutation: nPr = n! / (n-r)!
             if (l >= r && l >= 0 && r >= 0 && Number.isInteger(l) && Number.isInteger(r)) {
                 result = factorial(l) / factorial(l - r);
             } else {
@@ -77,6 +78,7 @@ function calculateResult() {
             }
             break;
         case 'C':
+            // Combination: nCr = n! / (r! * (n-r)!)
             if (l >= r && l >= 0 && r >= 0 && Number.isInteger(l) && Number.isInteger(r)) {
                 result = factorial(l) / (factorial(r) * factorial(l - r));
             } else {
@@ -89,6 +91,34 @@ function calculateResult() {
     left = result.toString();
     operator = '';
     right = '';
+    updateResult();
+}
+
+// Calculate factorial of the current number (n!)
+function calculateFactorial() {
+    if (left.length === 0) return;
+    if (operator.length > 0) return; // Only calculate factorial when we have just a number
+
+    const n = parseFloat(left);
+
+    if (n < 0 || !Number.isInteger(n)) {
+        left = 'Error';
+        updateResult();
+        return;
+    }
+
+    if (n > 170) {
+        left = 'Infinity'; // Factorial of numbers > 170 exceed JavaScript's max number
+        updateResult();
+        return;
+    }
+
+    let result = 1;
+    for (let i = 2; i <= n; i++) {
+        result *= i;
+    }
+
+    left = result.toString();
     updateResult();
 }
 
