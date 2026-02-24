@@ -288,6 +288,7 @@ function calculatePermutation() {
       calculationHistory?.push({
         expression: `${n}P${r} = ${result}`,
         words: numberToWords(result),
+        answer: result,
         time: new Date().toLocaleTimeString(),
       });
       if (calculationHistory.length > 20) calculationHistory.shift();
@@ -321,6 +322,7 @@ function calculateCombination() {
       calculationHistory?.push({
         expression: `${n}C${r} = ${result}`,
         words: numberToWords(result),
+        answer: result,
         time: new Date().toLocaleTimeString(),
       });
       if (calculationHistory.length > 20) calculationHistory.shift();
@@ -361,6 +363,7 @@ function calculateFactorial() {
   calculationHistory?.push({
     expression: `${n}! = ${result}`,
     words: numberToWords(result),
+    answer: result,
     time: new Date().toLocaleTimeString(),
   });
   if (calculationHistory.length > 20) calculationHistory.shift();
@@ -401,6 +404,7 @@ function calculateResult() {
     calculationHistory?.push({
       expression: currentExpression,
       words: numberToWords(result),
+      answer: result,
       time: new Date().toLocaleTimeString(),
     });
 
@@ -2117,3 +2121,74 @@ function clearPercentageChange() {
     right = '';
     updateResult();
 }
+
+// Function to calculate the 2x2 determinant
+function calculateMatrix() {
+  // 1. Fetch values (default to 0 if empty)
+  const a = parseFloat(document.getElementById('m11').value) || 0;
+  const b = parseFloat(document.getElementById('m12').value) || 0;
+  const c = parseFloat(document.getElementById('m21').value) || 0;
+  const d = parseFloat(document.getElementById('m22').value) || 0;
+
+  // 2. Determinant Formula: (a * d) - (b * c)
+  const detResult = (a * d) - (b * c);
+  
+  // 3. Update the UI Result
+  document.getElementById('matrix-result').innerText = detResult;
+
+  // 4. Sync with main calculator display
+  currentExpression = detResult.toString();
+  updateResult();
+
+  // 5. Automatically trigger word translation and speech if needed
+  if (typeof numberToWords === "function") {
+      const words = numberToWords(detResult);
+      const wordArea = document.getElementById("word-area");
+      const wordText = document.getElementById("word-result-text") || document.getElementById("word-result");
+      
+      if (wordText) wordText.innerHTML = words;
+      if (wordArea) wordArea.style.display = "flex";
+      enableSpeakButton();
+  }
+}
+
+function redoCalculation() {
+  
+  var calcHistory =localStorage.getItem("calcHistory")
+  var History = JSON.parse(calcHistory)
+  
+  var lastIn = History[History.length - 1];
+  console.log(lastIn)
+    if (lastIn) {
+        // Restore the entire calculation with result
+      const tokenizer = /(-?\d*\.?\d+|[()+\-*/%^])/g;
+
+      const match = lastIn.expression.match(tokenizer);
+      console.log(match)
+      if (match) {
+      var left = match[0];
+      var operator = match[1];
+      var right = match[2];
+        
+        
+        // Show the full expression first
+        document.getElementById('result').value = match.join("") + '=' + lastIn.answer ;
+        
+        // Then restore to just the result
+        
+        
+        // Disable redo button after use
+        // disableRedo();
+    
+      }
+    }
+  }
+function enableRedo() {
+    const redoBtn = document.getElementById('redoBtn');
+    redoBtn.disabled = false;
+}
+
+function disableRedo() {
+    const redoBtn = document.getElementById('redoBtn');
+    redoBtn.disabled = true;
+} 
