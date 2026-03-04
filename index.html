@@ -931,6 +931,40 @@ border-radius:15px;">
                             </div>
                           </div>
                         </div>
+                        <!-- Formula Calculator Item -->
+                         <div class="accordion-item">
+                          <h2 class="accordion-header" id="headingFormula">
+                            <button class="accordion-button collapsed d-flex justify-content-between align-items-center"
+                              type="button" data-bs-toggle="collapse" data-bs-target="#collapseFormula"
+                              aria-expanded="false" aria-controls="collapseFormula">
+                              <span>🎯Formula Calculator</span>
+                            </button>
+                          </h2>
+                          <div id="collapseFormula" class="accordion-collapse collapse" aria-labelledby="headingFormula"
+                            data-bs-parent="#converterAccordion">
+                            <div class="accordion-body">
+                        <div class="mt-3">
+                              <select class="form-select mb-2" id="formulaCategory">
+                                 <option value="">Select Formula Category</option>
+                                 <option value="geometry">Geometry</option>
+                                 <option value="finance">Finance</option>
+                                 <option value="algebra">Algebra</option>
+                              </select>
+
+                               <select class="form-select mb-2" id="formulaSelect">
+                                 <option value="">Select Formula</option>
+                               </select>
+
+                                <div id="formulaInputs" class="mb-2"></div>
+
+                                <button class="btn btn-primary w-100" onclick="calculateFormula()">
+                                  Calculate Formula
+                                </button>
+                                <!-- Result Display -->
+                              <div id="formula-result"></div>
+                          </div>
+                          </div>
+                          </div>
 
                         <!-- Physics Calculator Accordion -->
                         <div class="accordion-item">
@@ -1530,5 +1564,6 @@ border-radius:15px;">
     </div>
   </div>
 </body>
+
 
 </html>
