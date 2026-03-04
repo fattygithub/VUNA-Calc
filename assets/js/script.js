@@ -3120,3 +3120,29 @@ function clearBMICalculator() {
     document.getElementById('bmi-height').value = '';
     document.getElementById('bmi-result').style.display = 'none';
 }
+
+
+// ------------------------------
+// ROUND UP TO DECIMAL PLACES
+// ------------------------------
+let currentDP = 2;
+
+document.getElementById('dpMainBtn').addEventListener('click', function(e) {
+  e.stopPropagation();
+  const menu = document.getElementById('dpDropdownMenu');
+  const isOpen = menu.style.display === 'block';
+  menu.style.display = isOpen ? 'none' : 'block';
+});
+
+function setDP(dp) {
+  currentDP = dp;
+  document.getElementById('dpLabel').textContent = dp + 'dp';
+  document.getElementById('dpDropdownMenu').style.display = 'none';
+  roundToDecimal(dp);
+}
+
+function roundToDecimal(dp) {
+  const val = parseFloat(document.getElementById('result').value);
+  if (isNaN(val)) return;
+  document.getElementById('result').value = val.toFixed(dp);
+}

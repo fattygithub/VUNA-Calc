@@ -568,7 +568,8 @@
                 <div class="calculator">
                   <div class="display-container">
                     <input type="text" class="form-control" id="result" placeholder="0" disabled />
-                    <span class="input-group-text" id="copy-icon" style="cursor:pointer;" onclick="copyResult()">📋</span>
+                    <span class="input-group-text" id="copy-icon" style="cursor:pointer;"
+                      onclick="copyResult()">📋</span>
                   </div>
                   <div id="memoryIndicator" style="font-weight:bold; visibility:hidden; margin:5px 10px;">
                     M
@@ -651,7 +652,8 @@ border-radius:15px;">
                   <div class="btn-grid">
                     <div class="row">
                       <div class="col-md-12">
-                        <input class="btn btn-info btn-block w-100" type="button" value="↻ REDO" id="redoBtn" onclick="redoCalculation()" />
+                        <input class="btn btn-info btn-block w-100" type="button" value="↻ REDO" id="redoBtn"
+                          onclick="redoCalculation()" />
                       </div>
                     </div>
 
@@ -698,11 +700,10 @@ border-radius:15px;">
                     <button class="btn btn-power btn-special" onclick="calculateCube()">x³</button>
                     <button class="btn btn-special" onclick="cubeRootResult()">∛x</button>
                     <button class="btn btn-special" onclick="calculateReciprocal()" title="Reciprocal: 1/x">1/x</button>
-                    
+
                     <!-- Row 7 -->
                     <button class="btn btn-special" onclick="calculateSquareRoot()">√</button>
-                    <button class="btn btn-action" onclick="factors()"
-                      stylex="grid-column: span 2;">Factors</button>
+                    <button class="btn btn-action" onclick="factors()" stylex="grid-column: span 2;">Factors</button>
 
                     <!-- Row 7 - Permutation & Combination -->
                     <button class="btn btn-special" onclick="calculatePermutation()"
@@ -719,11 +720,23 @@ border-radius:15px;">
                     <button class="btn btn-special" onclick="memorySubtract()">M-</button>
 
                     <!--  Row 8                  -->
+                    <div class="btn-group" role="" style="position:relative;">
+                      <button class="btn btn-special" id="dpMainBtn">
+                        ⌃ <span id="dpLabel">2dp</span> ▾
+                      </button>
+
+                      <ul  id="dpDropdownMenu"
+                        style="display:none; position:absolute; top:100%; left:0; list-style:none; padding:4px 0; margin:0; z-index:999; min-width:80px;">
+                        <li class="btn btn-special"><a href="#" onclick="setDP(1); return false;">⌃ 1dp</a></li>
+                        <li class="btn btn-special"><a href="#" onclick="setDP(2); return false;">⌃ 2dp</a></li>
+                        <li class="btn btn-special"><a href="#" onclick="setDP(3); return false;">⌃ 3dp</a></li>
+                      </ul>
+                    </div>
                     <button class="btn btn-special" onclick="tenPower()">10<sup>x</sup></button>
-                    <button id="voice-input-btn" class="btn btn-special" aria-label="Speak calculation input" onclick="startVoiceInput()">🎙️</button>
+                    <button id="voice-input-btn" class="btn btn-special" aria-label="Speak calculation input"
+                      onclick="startVoiceInput()">🎙️</button>
                     <button class="btn btn-operator" onclick="convertToHex()">HEX</button>
                     <button class="btn btn-operator" onclick="openGeometry()">📐 Geo</button>
-
                     <!-- Row 9 -->
                     <button class="btn btn-equals" onclick="calculateResult()" stylex="grid-column: span 3;">=</button>
                   </div>
@@ -858,8 +871,9 @@ border-radius:15px;">
                                 <label class="form-label small" style="font-weight: 600;">Area</label>
                                 <div class="input-group input-group-sm">
                                   <input type="number" class="form-control" id="area-value" placeholder="Value"
-                                  value="1" oninput="convertUnit('area')">
-                                  <select class="form-select form-select-sm" id="from-area" onchange="convertUnit('area')">
+                                    value="1" oninput="convertUnit('area')">
+                                  <select class="form-select form-select-sm" id="from-area"
+                                    onchange="convertUnit('area')">
                                     <option value="sqm">m²</option>
                                     <option value="sqkm">km²</option>
                                     <option value="sqmile">mi²</option>
@@ -870,7 +884,8 @@ border-radius:15px;">
                                     <option value="acre">acre</option>
                                   </select>
                                   <span class="input-group-text">→</span>
-                                  <select class="form-select form-select-sm" id="to-area" onchange="convertUnit('area')">
+                                  <select class="form-select form-select-sm" id="to-area"
+                                    onchange="convertUnit('area')">
                                     <option value="sqmile">mi²</option>
                                     <option value="sqm">m²</option>
                                     <option value="sqkm">km²</option>
@@ -888,8 +903,9 @@ border-radius:15px;">
                                 <label class="form-label small" style="font-weight: 600;">Data Storage</label>
                                 <div class="input-group input-group-sm">
                                   <input type="number" class="form-control" id="data-value" placeholder="Value"
-                                  value="1" oninput="convertUnit('data')">
-                                  <select class="form-select form-select-sm" id="from-data" onchange="convertUnit('data')">
+                                    value="1" oninput="convertUnit('data')">
+                                  <select class="form-select form-select-sm" id="from-data"
+                                    onchange="convertUnit('data')">
                                     <option value="bit">bit</option>
                                     <option value="byte">B</option>
                                     <option value="kb">KB</option>
@@ -898,7 +914,8 @@ border-radius:15px;">
                                     <option value="tb">TB</option>
                                   </select>
                                   <span class="input-group-text">→</span>
-                                  <select class="form-select form-select-sm" id="to-data" onchange="convertUnit('data')">
+                                  <select class="form-select form-select-sm" id="to-data"
+                                    onchange="convertUnit('data')">
                                     <option value="B">B</option>
                                     <option value="bit">bit</option>
                                     <option value="kb">KB</option>
@@ -1050,8 +1067,9 @@ border-radius:15px;">
                           <div id="collapseQuadratic" class="accordion-collapse collapse"
                             aria-labelledby="headingQuadratic" data-bs-parent="#converterAccordion">
                             <div class="accordion-body">
-                              <p class="text-muted small mb-3">Solve quadratic equations in the form: ax² + bx + c = 0</p>
-                              
+                              <p class="text-muted small mb-3">Solve quadratic equations in the form: ax² + bx + c = 0
+                              </p>
+
                               <div class="row g-2 mb-3">
                                 <div class="col">
                                   <label class="form-label small" style="font-weight: 600;">a</label>
@@ -1080,8 +1098,10 @@ border-radius:15px;">
                               <!-- Result Display -->
                               <div id="quad-result" class="alert alert-info py-2 px-3 mb-0" style="display: none;">
                                 <div class="mb-2"><strong>Roots:</strong> <span id="quad-roots-value"></span></div>
-                                <div class="mb-2"><strong>Discriminant (D):</strong> <span id="quad-discriminant"></span></div>
-                                <div><strong>Description:</strong> <span id="quad-description" style="font-style: italic; color: #555;"></span></div>
+                                <div class="mb-2"><strong>Discriminant (D):</strong> <span
+                                    id="quad-discriminant"></span></div>
+                                <div><strong>Description:</strong> <span id="quad-description"
+                                    style="font-style: italic; color: #555;"></span></div>
                               </div>
 
                               <!-- Examples -->
@@ -1104,11 +1124,12 @@ border-radius:15px;">
                               <span>📊 Cubic Solver (ax³ + bx² + cx + d = 0)</span>
                             </button>
                           </h2>
-                          <div id="collapseCubic" class="accordion-collapse collapse"
-                            aria-labelledby="headingCubic" data-bs-parent="#converterAccordion">
+                          <div id="collapseCubic" class="accordion-collapse collapse" aria-labelledby="headingCubic"
+                            data-bs-parent="#converterAccordion">
                             <div class="accordion-body">
-                              <p class="text-muted small mb-3">Solve cubic equations in the form: ax³ + bx² + cx + d = 0</p>
-                              
+                              <p class="text-muted small mb-3">Solve cubic equations in the form: ax³ + bx² + cx + d = 0
+                              </p>
+
                               <div class="row g-2 mb-3">
                                 <div class="col">
                                   <label class="form-label small" style="font-weight: 600;">a</label>
@@ -1141,7 +1162,8 @@ border-radius:15px;">
                               <!-- Result Display -->
                               <div id="cubic-result" class="alert alert-info py-2 px-3 mb-0" style="display: none;">
                                 <div class="mb-2"><strong>Roots:</strong> <span id="cubic-roots-value"></span></div>
-                                <div><strong>Description:</strong> <span id="cubic-description" style="font-style: italic; color: #555;"></span></div>
+                                <div><strong>Description:</strong> <span id="cubic-description"
+                                    style="font-style: italic; color: #555;"></span></div>
                               </div>
 
                               <!-- Examples -->
@@ -1164,11 +1186,11 @@ border-radius:15px;">
                               <span>📈 Quartic Solver (ax⁴ + bx³ + cx² + dx + e = 0)</span>
                             </button>
                           </h2>
-                          <div id="collapseQuartic" class="accordion-collapse collapse"
-                            aria-labelledby="headingQuartic" data-bs-parent="#converterAccordion">
+                          <div id="collapseQuartic" class="accordion-collapse collapse" aria-labelledby="headingQuartic"
+                            data-bs-parent="#converterAccordion">
                             <div class="accordion-body">
                               <p class="text-muted small mb-3">Solve quartic equations: ax⁴ + bx³ + cx² + dx + e = 0</p>
-                              
+
                               <div class="row g-2 mb-3">
                                 <div class="col">
                                   <label class="form-label small" style="font-weight: 600;">a</label>
@@ -1205,7 +1227,8 @@ border-radius:15px;">
                               <!-- Result Display -->
                               <div id="quartic-result" class="alert alert-info py-2 px-3 mb-0" style="display: none;">
                                 <div class="mb-2"><strong>Roots:</strong> <span id="quartic-roots-value"></span></div>
-                                <div><strong>Description:</strong> <span id="quartic-description" style="font-style: italic; color: #555;"></span></div>
+                                <div><strong>Description:</strong> <span id="quartic-description"
+                                    style="font-style: italic; color: #555;"></span></div>
                               </div>
 
                               <!-- Examples -->
@@ -1340,10 +1363,13 @@ border-radius:15px;">
                               </div>
 
                               <!-- Result Display -->
-                              <div id="probability-result" class="alert alert-info py-2 px-3 mb-0" style="display: none;">
+                              <div id="probability-result" class="alert alert-info py-2 px-3 mb-0"
+                                style="display: none;">
                                 <div class="mb-2"><strong>Result:</strong> <span id="probability-value"></span></div>
-                                <div class="mb-2"><strong>Formula Used:</strong> <span id="probability-formula"></span></div>
-                                <div><strong>Explanation:</strong> <span id="probability-explanation" style="font-style: italic;"></span></div>
+                                <div class="mb-2"><strong>Formula Used:</strong> <span id="probability-formula"></span>
+                                </div>
+                                <div><strong>Explanation:</strong> <span id="probability-explanation"
+                                    style="font-style: italic;"></span></div>
                               </div>
 
                               <!-- Examples -->
@@ -1351,7 +1377,8 @@ border-radius:15px;">
                                 <strong>Examples:</strong><br>
                                 • <strong>Single Event:</strong> Rolling a 6 on a fair die (P = 1/6 ≈ 0.1667)<br>
                                 • <strong>P(A and B):</strong> Flipping heads twice in a row (0.5 * 0.5 = 0.25)<br>
-                                • <strong>P(A or B):</strong> Drawing a heart or a diamond from a deck (13/52 + 13/52 = 0.5)<br>
+                                • <strong>P(A or B):</strong> Drawing a heart or a diamond from a deck (13/52 + 13/52 =
+                                0.5)<br>
                                 • <strong>Binomial:</strong> Probability of exactly 3 heads in 5 coin flips ≈ 0.3125
                               </div>
                             </div>
@@ -1368,8 +1395,8 @@ border-radius:15px;">
                               <span>⚖️ BMI Calculator</span>
                             </button>
                           </h2>
-                          <div id="collapseBMI" class="accordion-collapse collapse"
-                            aria-labelledby="headingBMI" data-bs-parent="#converterAccordion">
+                          <div id="collapseBMI" class="accordion-collapse collapse" aria-labelledby="headingBMI"
+                            data-bs-parent="#converterAccordion">
                             <div class="accordion-body">
                               <p class="text-muted small mb-3">Calculate your Body Mass Index (BMI)</p>
 
@@ -1399,7 +1426,8 @@ border-radius:15px;">
                               <div id="bmi-result" class="alert alert-info py-2 px-3 mb-0" style="display: none;">
                                 <div class="mb-2"><strong>BMI:</strong> <span id="bmi-value"></span></div>
                                 <div class="mb-2"><strong>Category:</strong> <span id="bmi-category"></span></div>
-                                <div><strong>Health Note:</strong> <span id="bmi-note" style="font-style: italic;"></span></div>
+                                <div><strong>Health Note:</strong> <span id="bmi-note"
+                                    style="font-style: italic;"></span></div>
                               </div>
                             </div>
                           </div>
