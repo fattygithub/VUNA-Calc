@@ -460,31 +460,37 @@ function calculateResult() {
   if (!currentExpression) return;
 
   try {
+    // Handle Permutation (nPr) expressions
     const permMatch = currentExpression.match(/^(\d+)P(\d+)$/i);
-    if (permMatch) { calculatePermutation(); return; }
+    if (permMatch) {
+      calculatePermutation();
+      return;
+    }
 
+    // Handle Combination (nCr) expressions
     const combMatch = currentExpression.match(/^(\d+)C(\d+)$/i);
     if (combMatch) {
       calculateCombination();
       return;
     }
-
     let normalizedExpression = normalizeExpression(currentExpression);
     let result = eval(normalizedExpression);
 
-    if (isNaN(result) || !isFinite(result)) throw new Error();
+    if (isNaN(result) || !isFinite(result)) {
+      throw new Error();
+    }
 
     calculationHistory?.push({
-      expression: savedExpression,
+      expression: currentExpression,
       words: numberToWords(result),
       answer: result,
       time: new Date().toLocaleTimeString(),
     });
 
     if (calculationHistory.length > 20) calculationHistory.shift();
+
     localStorage.setItem("calcHistory", JSON.stringify(calculationHistory));
     renderHistory();
-    resetRedoIndex();
 
     currentExpression = result.toString();
     updateResult();
@@ -3135,5 +3141,92 @@ function displayStatisticsResults(stats) {
 function clearStatistics() {
   document.getElementById('stats-data-input').value = '';
   document.getElementById('stats-result').style.display = 'none';
+}
 
+// ============================================
+// BMI CALCULATOR FUNCTIONS
+// ============================================
+
+/**
+ * Calculates the Body Mass Index (BMI) based on weight and height.
+ */
+function calculateBMI() {
+    const weight = parseFloat(document.getElementById('bmi-weight').value);
+    const heightCm = parseFloat(document.getElementById('bmi-height').value);
+    const resultDiv = document.getElementById('bmi-result');
+    const bmiValueSpan = document.getElementById('bmi-value');
+    const bmiCategorySpan = document.getElementById('bmi-category');
+    const bmiNoteSpan = document.getElementById('bmi-note');
+
+    if (isNaN(weight) || isNaN(heightCm) || weight <= 0 || heightCm <= 0) {
+        alert('Please enter valid positive numbers for weight and height.');
+        return;
+    }
+
+    // Formula: BMI = weight (kg) / [height (m)]^2
+    const heightM = heightCm / 100;
+    const bmi = weight / (heightM * heightM);
+    const bmiRounded = bmi.toFixed(2);
+
+    let category = '';
+    let note = '';
+
+    if (bmi < 18.5) {
+        category = 'Underweight';
+        note = 'It is important to eat a balanced diet and consult a healthcare provider.';
+    } else if (bmi >= 18.5 && bmi < 25) {
+        category = 'Normal weight';
+        note = 'Great job! Maintain a healthy lifestyle with balanced nutrition and exercise.';
+    } else if (bmi >= 25 && bmi < 30) {
+        category = 'Overweight';
+        note = 'Consider a more active lifestyle and balanced diet to reach a healthier range.';
+    } else {
+        category = 'Obese';
+        note = 'It is recommended to consult a healthcare provider for personalized advice.';
+    }
+
+    // Display the result
+    bmiValueSpan.textContent = bmiRounded;
+    bmiCategorySpan.textContent = category;
+    bmiNoteSpan.textContent = note;
+    resultDiv.style.display = 'block';
+
+    // Update main calculator display with the result
+    currentExpression = bmiRounded;
+    updateResult();
+}
+
+/**
+ * Clears the BMI calculator inputs and hides the result.
+ */
+function clearBMICalculator() {
+    document.getElementById('bmi-weight').value = '';
+    document.getElementById('bmi-height').value = '';
+    document.getElementById('bmi-result').style.display = 'none';
+}
+
+
+// ------------------------------
+// ROUND UP TO DECIMAL PLACES
+// ------------------------------
+let currentDP = 2;
+
+document.getElementById('dpMainBtn').addEventListener('click', function(e) {
+  e.stopPropagation();
+  const menu = document.getElementById('dpDropdownMenu');
+  const isOpen = menu.style.display === 'block';
+  menu.style.display = isOpen ? 'none' : 'block';
+});
+
+function setDP(dp) {
+  currentDP = dp;
+  document.getElementById('dpLabel').textContent = dp + 'dp';
+  document.getElementById('dpDropdownMenu').style.display = 'none';
+  roundToDecimal(dp);
+}
+
+function roundToDecimal(dp) {
+  const val = parseFloat(document.getElementById('result').value);
+  if (isNaN(val)) return;
+  document.getElementById('result').value = val.toFixed(dp);
 }
