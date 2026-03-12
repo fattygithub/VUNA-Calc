@@ -3484,7 +3484,7 @@ function appendPi() {
     currentExpression += piEval;
     displayEl.value += piDisplay;
   } 
-  if (!displayEl.value){
+  else if (!displayEl.value){
     currentExpression = piEval;
     displayEl.value += piDisplay;
   }
