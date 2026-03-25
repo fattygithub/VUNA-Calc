@@ -8670,3 +8670,709 @@ function calcAmortization() {
   document.getElementById('amort-summary').style.display = 'block';
   document.getElementById('amort-table-wrapper').style.display = 'block';
 }
+
+let graphCanvas = null;
+let graphCtx = null;
+let graphFunctions = [];
+let showGraphGrid = true;
+let graphBounds = { xMin: -10, xMax: 10, yMin: -10, yMax: 10 };
+let isGraphPanning = false;
+let graphPanStart = { x: 0, y: 0, bounds: null };
+
+function initGraphingCalculator() {
+  graphCanvas = document.getElementById('graph-canvas');
+  if (!graphCanvas) return;
+
+  graphCtx = graphCanvas.getContext('2d');
+
+  graphCanvas.addEventListener('mousemove', handleGraphMouseMove);
+  graphCanvas.addEventListener('mouseleave', handleGraphMouseLeave);
+  graphCanvas.addEventListener('wheel', handleGraphWheel);
+  graphCanvas.addEventListener('mousedown', handleGraphMouseDown);
+  window.addEventListener('mouseup', handleGraphMouseUp);
+  graphCanvas.addEventListener('mousemove', handleGraphPanMove);
+
+  const graphInput = document.getElementById('graph-function');
+  if (graphInput) {
+    graphInput.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter') {
+        addFunction();
+      }
+    });
+  }
+
+  updateGraph();
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  initGraphingCalculator();
+});
+
+function normalizeExpression(expression) {
+  return expression
+    .replace(/\s+/g, '')
+    .replace(/\^/g, '**')
+    .replace(/(\d)(x)/g, '$1*$2')
+    .replace(/(\))(x)/g, '$1*$2')
+    .replace(/(x)(\()/g, '$1*$2')
+    .replace(/(\d)(\()/g, '$1*$2')
+    .replace(/pi/g, 'Math.PI')
+    .replace(/\be\b/g, 'Math.E')
+    .replace(/asin\(/g, 'Math.asin(')
+    .replace(/acos\(/g, 'Math.acos(')
+    .replace(/atan\(/g, 'Math.atan(')
+    .replace(/sin\(/g, 'Math.sin(')
+    .replace(/cos\(/g, 'Math.cos(')
+    .replace(/tan\(/g, 'Math.tan(')
+    .replace(/sqrt\(/g, 'Math.sqrt(')
+    .replace(/abs\(/g, 'Math.abs(')
+    .replace(/floor\(/g, 'Math.floor(')
+    .replace(/ceil\(/g, 'Math.ceil(')
+    .replace(/round\(/g, 'Math.round(')
+    .replace(/exp\(/g, 'Math.exp(')
+    .replace(/ln\(/g, 'Math.log(')
+    .replace(/log\(/g, 'Math.log10(');
+}
+
+function evaluateFunction(expression, x) {
+  try {
+    const normalized = normalizeExpression(expression);
+    const fn = new Function('x', `return ${normalized};`);
+    const value = fn(x);
+    if (!Number.isFinite(value)) return null;
+    return value;
+  } catch (error) {
+    return null;
+  }
+}
+
+function worldToCanvas(x, y) {
+  const width = graphCanvas.width;
+  const height = graphCanvas.height;
+  const canvasX = ((x - graphBounds.xMin) / (graphBounds.xMax - graphBounds.xMin)) * width;
+  const canvasY = height - ((y - graphBounds.yMin) / (graphBounds.yMax - graphBounds.yMin)) * height;
+  return { x: canvasX, y: canvasY };
+}
+
+function canvasToWorld(canvasX, canvasY) {
+  const width = graphCanvas.width;
+  const height = graphCanvas.height;
+  const x = graphBounds.xMin + (canvasX / width) * (graphBounds.xMax - graphBounds.xMin);
+  const y = graphBounds.yMax - (canvasY / height) * (graphBounds.yMax - graphBounds.yMin);
+  return { x, y };
+}
+
+function drawGraphGrid() {
+  if (!showGraphGrid) return;
+
+  const width = graphCanvas.width;
+  const height = graphCanvas.height;
+
+  graphCtx.strokeStyle = '#f1f3f5';
+  graphCtx.lineWidth = 1;
+
+  const xStep = (graphBounds.xMax - graphBounds.xMin) / 20;
+  const yStep = (graphBounds.yMax - graphBounds.yMin) / 20;
+
+  for (let x = Math.ceil(graphBounds.xMin / xStep) * xStep; x <= graphBounds.xMax; x += xStep) {
+    const point = worldToCanvas(x, 0);
+    graphCtx.beginPath();
+    graphCtx.moveTo(point.x, 0);
+    graphCtx.lineTo(point.x, height);
+    graphCtx.stroke();
+  }
+
+  for (let y = Math.ceil(graphBounds.yMin / yStep) * yStep; y <= graphBounds.yMax; y += yStep) {
+    const point = worldToCanvas(0, y);
+    graphCtx.beginPath();
+    graphCtx.moveTo(0, point.y);
+    graphCtx.lineTo(width, point.y);
+    graphCtx.stroke();
+  }
+}
+
+function drawAxes() {
+  const width = graphCanvas.width;
+  const height = graphCanvas.height;
+
+  graphCtx.strokeStyle = '#6c757d';
+  graphCtx.lineWidth = 2;
+
+  const yAxisX = worldToCanvas(0, 0).x;
+  if (yAxisX >= 0 && yAxisX <= width) {
+    graphCtx.beginPath();
+    graphCtx.moveTo(yAxisX, 0);
+    graphCtx.lineTo(yAxisX, height);
+    graphCtx.stroke();
+  }
+
+  const xAxisY = worldToCanvas(0, 0).y;
+  if (xAxisY >= 0 && xAxisY <= height) {
+    graphCtx.beginPath();
+    graphCtx.moveTo(0, xAxisY);
+    graphCtx.lineTo(width, xAxisY);
+    graphCtx.stroke();
+  }
+}
+
+function drawFunction(expression, color) {
+  const width = graphCanvas.width;
+  const step = (graphBounds.xMax - graphBounds.xMin) / width;
+
+  graphCtx.strokeStyle = color;
+  graphCtx.lineWidth = 2.5;
+  graphCtx.beginPath();
+
+  let firstPoint = true;
+
+  for (let pixelX = 0; pixelX <= width; pixelX++) {
+    const x = graphBounds.xMin + (pixelX / width) * (graphBounds.xMax - graphBounds.xMin);
+    const y = evaluateFunction(expression, x);
+
+    if (y === null || !Number.isFinite(y) || Math.abs(y) > 1e6) {
+      firstPoint = true;
+      continue;
+    }
+
+    const point = worldToCanvas(x, y);
+
+    if (point.y < -1000 || point.y > graphCanvas.height + 1000) {
+      firstPoint = true;
+      continue;
+    }
+
+    if (firstPoint) {
+      graphCtx.moveTo(point.x, point.y);
+      firstPoint = false;
+    } else {
+      const prevX = x - step;
+      const prevY = evaluateFunction(expression, prevX);
+      if (prevY !== null && Math.abs(y - prevY) > (graphBounds.yMax - graphBounds.yMin) * 0.5) {
+        graphCtx.moveTo(point.x, point.y);
+      } else {
+        graphCtx.lineTo(point.x, point.y);
+      }
+    }
+  }
+
+  graphCtx.stroke();
+}
+
+function updateGraph() {
+  if (!graphCanvas || !graphCtx) return;
+
+  const xMinInput = document.getElementById('x-min');
+  const xMaxInput = document.getElementById('x-max');
+  const yMinInput = document.getElementById('y-min');
+  const yMaxInput = document.getElementById('y-max');
+
+  if (xMinInput && xMaxInput && yMinInput && yMaxInput) {
+    const xMin = parseFloat(xMinInput.value);
+    const xMax = parseFloat(xMaxInput.value);
+    const yMin = parseFloat(yMinInput.value);
+    const yMax = parseFloat(yMaxInput.value);
+
+    if (Number.isFinite(xMin) && Number.isFinite(xMax) && Number.isFinite(yMin) && Number.isFinite(yMax) && xMin < xMax && yMin < yMax) {
+      graphBounds = { xMin, xMax, yMin, yMax };
+    }
+  }
+
+  graphCtx.clearRect(0, 0, graphCanvas.width, graphCanvas.height);
+  drawGraphGrid();
+  drawAxes();
+
+  graphFunctions.forEach(item => {
+    drawFunction(item.expression, item.color);
+  });
+}
+
+function addFunction() {
+  const functionInput = document.getElementById('graph-function');
+  const colorInput = document.getElementById('function-color');
+  if (!functionInput || !colorInput) return;
+
+  const expression = functionInput.value.trim();
+  if (!expression) return;
+
+  const testValue = evaluateFunction(expression, 1);
+  if (testValue === null && !expression.includes('x')) {
+    alert('Invalid function expression. Please use a valid expression in x.');
+    return;
+  }
+
+  graphFunctions.push({
+    id: Date.now() + Math.random(),
+    expression,
+    color: colorInput.value,
+  });
+
+  renderFunctionList();
+  updateGraph();
+}
+
+function removeFunction(id) {
+  graphFunctions = graphFunctions.filter(item => item.id !== id);
+  renderFunctionList();
+  updateGraph();
+}
+
+function clearAllFunctions() {
+  graphFunctions = [];
+  renderFunctionList();
+  updateGraph();
+  hideAnalysisResult();
+}
+
+function renderFunctionList() {
+  const listContainer = document.getElementById('function-list');
+  const itemsContainer = document.getElementById('function-items');
+  if (!listContainer || !itemsContainer) return;
+
+  if (graphFunctions.length === 0) {
+    listContainer.style.display = 'none';
+    itemsContainer.innerHTML = '';
+    return;
+  }
+
+  listContainer.style.display = 'block';
+  itemsContainer.innerHTML = graphFunctions
+    .map(item => `
+      <span class="badge" style="background:${item.color}; color:#212529; font-size:0.8rem;">
+        ${item.expression}
+        <button class="btn btn-sm p-0 ms-1" style="color:#212529;" onclick="removeFunction(${item.id})">×</button>
+      </span>
+    `)
+    .join('');
+}
+
+function zoomIn() {
+  zoomGraph(0.8);
+}
+
+function zoomOut() {
+  zoomGraph(1.25);
+}
+
+function zoomGraph(factor) {
+  const centerX = (graphBounds.xMin + graphBounds.xMax) / 2;
+  const centerY = (graphBounds.yMin + graphBounds.yMax) / 2;
+  const halfWidth = ((graphBounds.xMax - graphBounds.xMin) / 2) * factor;
+  const halfHeight = ((graphBounds.yMax - graphBounds.yMin) / 2) * factor;
+
+  graphBounds = {
+    xMin: centerX - halfWidth,
+    xMax: centerX + halfWidth,
+    yMin: centerY - halfHeight,
+    yMax: centerY + halfHeight,
+  };
+
+  syncGraphBoundsInputs();
+  updateGraph();
+}
+
+function resetView() {
+  graphBounds = { xMin: -10, xMax: 10, yMin: -10, yMax: 10 };
+  syncGraphBoundsInputs();
+  updateGraph();
+}
+
+function toggleGrid() {
+  showGraphGrid = !showGraphGrid;
+  const gridToggle = document.getElementById('grid-toggle');
+  if (gridToggle) {
+    gridToggle.classList.toggle('active', showGraphGrid);
+  }
+  updateGraph();
+}
+
+function syncGraphBoundsInputs() {
+  const xMinInput = document.getElementById('x-min');
+  const xMaxInput = document.getElementById('x-max');
+  const yMinInput = document.getElementById('y-min');
+  const yMaxInput = document.getElementById('y-max');
+
+  if (xMinInput) xMinInput.value = graphBounds.xMin.toFixed(2);
+  if (xMaxInput) xMaxInput.value = graphBounds.xMax.toFixed(2);
+  if (yMinInput) yMinInput.value = graphBounds.yMin.toFixed(2);
+  if (yMaxInput) yMaxInput.value = graphBounds.yMax.toFixed(2);
+}
+
+function handleGraphMouseMove(event) {
+  if (!graphCanvas) return;
+
+  const rect = graphCanvas.getBoundingClientRect();
+  const scaleX = graphCanvas.width / rect.width;
+  const scaleY = graphCanvas.height / rect.height;
+  const canvasX = (event.clientX - rect.left) * scaleX;
+  const canvasY = (event.clientY - rect.top) * scaleY;
+  const worldPoint = canvasToWorld(canvasX, canvasY);
+
+  const display = document.getElementById('coordinates-display');
+  if (display) {
+    display.style.display = 'block';
+    display.textContent = `x: ${worldPoint.x.toFixed(3)}, y: ${worldPoint.y.toFixed(3)}`;
+  }
+}
+
+function handleGraphMouseLeave() {
+  const display = document.getElementById('coordinates-display');
+  if (display) {
+    display.style.display = 'none';
+  }
+}
+
+function handleGraphWheel(event) {
+  event.preventDefault();
+  if (event.deltaY < 0) {
+    zoomIn();
+  } else {
+    zoomOut();
+  }
+}
+
+function handleGraphMouseDown(event) {
+  if (!graphCanvas) return;
+  isGraphPanning = true;
+  graphPanStart = {
+    x: event.clientX,
+    y: event.clientY,
+    bounds: { ...graphBounds },
+  };
+}
+
+function handleGraphMouseUp() {
+  isGraphPanning = false;
+}
+
+function handleGraphPanMove(event) {
+  if (!isGraphPanning || !graphCanvas) return;
+
+  const rect = graphCanvas.getBoundingClientRect();
+  const deltaX = event.clientX - graphPanStart.x;
+  const deltaY = event.clientY - graphPanStart.y;
+
+  const xRange = graphPanStart.bounds.xMax - graphPanStart.bounds.xMin;
+  const yRange = graphPanStart.bounds.yMax - graphPanStart.bounds.yMin;
+
+  const worldDeltaX = -(deltaX / rect.width) * xRange;
+  const worldDeltaY = (deltaY / rect.height) * yRange;
+
+  graphBounds = {
+    xMin: graphPanStart.bounds.xMin + worldDeltaX,
+    xMax: graphPanStart.bounds.xMax + worldDeltaX,
+    yMin: graphPanStart.bounds.yMin + worldDeltaY,
+    yMax: graphPanStart.bounds.yMax + worldDeltaY,
+  };
+
+  syncGraphBoundsInputs();
+  updateGraph();
+}
+
+function analyzePoint() {
+  if (graphFunctions.length === 0) {
+    alert('Add at least one function first.');
+    return;
+  }
+
+  const xInput = document.getElementById('analysis-x');
+  const x = parseFloat(xInput ? xInput.value : '0');
+  if (!Number.isFinite(x)) {
+    alert('Enter a valid x value.');
+    return;
+  }
+
+  const expression = graphFunctions[0].expression;
+  const y = evaluateFunction(expression, x);
+  const derivative = approximateDerivative(expression, x);
+
+  if (y === null) {
+    alert('Function is undefined at that x value.');
+    return;
+  }
+
+  const result = document.getElementById('analysis-result');
+  const pointCoords = document.getElementById('point-coords');
+  const pointValue = document.getElementById('point-value');
+  const pointDerivative = document.getElementById('point-derivative');
+  const pointAnalysis = document.getElementById('point-analysis');
+
+  if (!result || !pointCoords || !pointValue || !pointDerivative || !pointAnalysis) return;
+
+  pointCoords.textContent = `(${x.toFixed(4)}, ${y.toFixed(4)})`;
+  pointValue.textContent = y.toFixed(6);
+  pointDerivative.textContent = Number.isFinite(derivative) ? derivative.toFixed(6) : 'undefined';
+
+  if (!Number.isFinite(derivative)) {
+    pointAnalysis.textContent = 'No derivative at this point';
+  } else if (Math.abs(derivative) < 1e-4) {
+    pointAnalysis.textContent = 'Likely stationary point';
+  } else if (derivative > 0) {
+    pointAnalysis.textContent = 'Increasing at this point';
+  } else {
+    pointAnalysis.textContent = 'Decreasing at this point';
+  }
+
+  result.style.display = 'block';
+}
+
+function approximateDerivative(expression, x) {
+  const h = 1e-5;
+  const y1 = evaluateFunction(expression, x + h);
+  const y2 = evaluateFunction(expression, x - h);
+  if (y1 === null || y2 === null) return NaN;
+  return (y1 - y2) / (2 * h);
+}
+
+function findDerivative() {
+  analyzePoint();
+}
+
+function findIntegral() {
+  if (graphFunctions.length === 0) {
+    alert('Add at least one function first.');
+    return;
+  }
+
+  const expression = graphFunctions[0].expression;
+  const x0 = graphBounds.xMin;
+  const x1 = graphBounds.xMax;
+  const n = 1000;
+  const dx = (x1 - x0) / n;
+  let area = 0;
+
+  for (let i = 0; i < n; i++) {
+    const xLeft = x0 + i * dx;
+    const xRight = xLeft + dx;
+    const yLeft = evaluateFunction(expression, xLeft);
+    const yRight = evaluateFunction(expression, xRight);
+    if (yLeft !== null && yRight !== null) {
+      area += ((yLeft + yRight) / 2) * dx;
+    }
+  }
+
+  const result = document.getElementById('analysis-result');
+  const pointAnalysis = document.getElementById('point-analysis');
+  if (result && pointAnalysis) {
+    pointAnalysis.textContent = `Approx integral on [${x0.toFixed(2)}, ${x1.toFixed(2)}] = ${area.toFixed(6)}`;
+    result.style.display = 'block';
+  }
+}
+
+function findRoots() {
+  if (graphFunctions.length === 0) {
+    alert('Add at least one function first.');
+    return;
+  }
+
+  const expression = graphFunctions[0].expression;
+  const roots = [];
+  const steps = 800;
+  const xStep = (graphBounds.xMax - graphBounds.xMin) / steps;
+
+  for (let i = 0; i < steps; i++) {
+    const x1 = graphBounds.xMin + i * xStep;
+    const x2 = x1 + xStep;
+    const y1 = evaluateFunction(expression, x1);
+    const y2 = evaluateFunction(expression, x2);
+    if (y1 === null || y2 === null) continue;
+
+    if (y1 === 0) {
+      roots.push(x1);
+    } else if (y1 * y2 < 0) {
+      const root = bisectRoot(expression, x1, x2);
+      if (Number.isFinite(root)) roots.push(root);
+    }
+  }
+
+  const uniqueRoots = dedupeCloseValues(roots, 1e-3);
+  const result = document.getElementById('analysis-result');
+  const pointAnalysis = document.getElementById('point-analysis');
+  if (result && pointAnalysis) {
+    pointAnalysis.textContent = uniqueRoots.length
+      ? `Roots: ${uniqueRoots.map(value => value.toFixed(4)).join(', ')}`
+      : 'No roots found in current view';
+    result.style.display = 'block';
+  }
+}
+
+function bisectRoot(expression, left, right) {
+  let a = left;
+  let b = right;
+  let fa = evaluateFunction(expression, a);
+  let fb = evaluateFunction(expression, b);
+  if (fa === null || fb === null || fa * fb > 0) return NaN;
+
+  for (let i = 0; i < 40; i++) {
+    const mid = (a + b) / 2;
+    const fm = evaluateFunction(expression, mid);
+    if (fm === null) return NaN;
+    if (Math.abs(fm) < 1e-8) return mid;
+    if (fa * fm < 0) {
+      b = mid;
+      fb = fm;
+    } else {
+      a = mid;
+      fa = fm;
+    }
+  }
+
+  return (a + b) / 2;
+}
+
+function dedupeCloseValues(values, tolerance) {
+  const sorted = [...values].sort((a, b) => a - b);
+  const unique = [];
+
+  sorted.forEach(value => {
+    if (!unique.length || Math.abs(value - unique[unique.length - 1]) > tolerance) {
+      unique.push(value);
+    }
+  });
+
+  return unique;
+}
+
+function findExtrema() {
+  if (graphFunctions.length === 0) {
+    alert('Add at least one function first.');
+    return;
+  }
+
+  const expression = graphFunctions[0].expression;
+  const criticalPoints = [];
+  const steps = 600;
+  const xStep = (graphBounds.xMax - graphBounds.xMin) / steps;
+
+  for (let i = 1; i < steps; i++) {
+    const x = graphBounds.xMin + i * xStep;
+    const d1 = approximateDerivative(expression, x - xStep);
+    const d2 = approximateDerivative(expression, x + xStep);
+    if (!Number.isFinite(d1) || !Number.isFinite(d2)) continue;
+
+    if (d1 * d2 < 0) {
+      const y = evaluateFunction(expression, x);
+      if (y !== null) {
+        criticalPoints.push({ x, y, type: d1 > 0 ? 'max' : 'min' });
+      }
+    }
+  }
+
+  const result = document.getElementById('analysis-result');
+  const pointAnalysis = document.getElementById('point-analysis');
+  if (result && pointAnalysis) {
+    if (!criticalPoints.length) {
+      pointAnalysis.textContent = 'No local extrema detected in current view';
+    } else {
+      pointAnalysis.textContent = criticalPoints
+        .slice(0, 6)
+        .map(point => `${point.type} at (${point.x.toFixed(3)}, ${point.y.toFixed(3)})`)
+        .join(' | ');
+    }
+    result.style.display = 'block';
+  }
+}
+
+function hideAnalysisResult() {
+  const result = document.getElementById('analysis-result');
+  if (result) result.style.display = 'none';
+}
+
+function loadPreset(expression) {
+  const input = document.getElementById('graph-function');
+  if (!input) return;
+  input.value = expression;
+}
+
+function exportGraph(format) {
+  if (!graphCanvas) return;
+
+  if (format === 'png') {
+    const link = document.createElement('a');
+    link.download = 'vuna-graph.png';
+    link.href = graphCanvas.toDataURL('image/png');
+    link.click();
+    return;
+  }
+
+  if (format === 'svg') {
+    const imageData = graphCanvas.toDataURL('image/png');
+    const svgContent = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="${graphCanvas.width}" height="${graphCanvas.height}">
+        <image href="${imageData}" width="${graphCanvas.width}" height="${graphCanvas.height}" />
+      </svg>
+    `;
+    const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'vuna-graph.svg';
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+}
+
+function showTable() {
+  if (graphFunctions.length === 0) {
+    alert('Add at least one function first.');
+    return;
+  }
+
+  const modalElement = document.getElementById('table-modal');
+  if (!modalElement) return;
+  const modal = new bootstrap.Modal(modalElement);
+  modal.show();
+}
+
+function generateTable() {
+  if (graphFunctions.length === 0) return;
+
+  const start = parseFloat(document.getElementById('table-start').value);
+  const end = parseFloat(document.getElementById('table-end').value);
+  const step = parseFloat(document.getElementById('table-step').value);
+
+  if (!Number.isFinite(start) || !Number.isFinite(end) || !Number.isFinite(step) || step <= 0 || start >= end) {
+    alert('Invalid table range or step.');
+    return;
+  }
+
+  const rows = [];
+  for (let x = start; x <= end + step / 2; x += step) {
+    const values = graphFunctions.map(item => {
+      const y = evaluateFunction(item.expression, x);
+      return y === null ? 'undefined' : y.toFixed(6);
+    });
+    rows.push({ x, values });
+  }
+
+  const content = document.getElementById('table-content');
+  if (!content) return;
+
+  const headerCells = graphFunctions
+    .map(item => `<th style="color:${item.color};">${item.expression}</th>`)
+    .join('');
+
+  const bodyRows = rows
+    .map(row => `
+      <tr>
+        <td>${row.x.toFixed(4)}</td>
+        ${row.values.map(value => `<td>${value}</td>`).join('')}
+      </tr>
+    `)
+    .join('');
+
+  content.innerHTML = `
+    <div class="table-responsive" style="max-height:420px; overflow:auto;">
+      <table class="table table-sm table-striped table-bordered">
+        <thead>
+          <tr>
+            <th>x</th>
+            ${headerCells}
+          </tr>
+        </thead>
+        <tbody>
+          ${bodyRows}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
