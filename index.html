@@ -543,8 +543,35 @@
     #answer-preview:empty {
       opacity: 0;
     }
+
     .currency-panel {
   margin-top: 20px;
+    }
+  #igbo-btn {
+  background: #6f42c1;
+  border: none;
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 10px rgba(111, 66, 193, 0.2);
+}
+
+#igbo-btn:hover:not(:disabled) {
+  background: #5a32a3;
+  transform: scale(1.05);
+}
+
+#igbo-btn:disabled {
+  background: #e9ecef;
+  color: #adb5bd;
+  box-shadow: none;
 }
   </style>
 </head>
@@ -582,6 +609,7 @@
                     <button id="hausa-btn" onclick="translateToHausa()">HA</button>
                     <button id="english-btn" onclick="backToEnglish()">EN</button>
                     <button id="portuguese-btn" onclick="translateToPortuguese()">PT</button>
+                    <button id="igbo-btn" onclick="translateToIgbo()">IG</button>
                     <button id="speak-btn" onclick="speakResult()" disabled title="Speak Result">
                       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
                         viewBox="0 0 16 16">
