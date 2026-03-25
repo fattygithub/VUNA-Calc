@@ -8510,3 +8510,163 @@ buttons.forEach((button) => {
     }
   });
 });
+
+
+
+// ===============================
+// 🏦 LOAN & MORTGAGE CALCULATOR
+// ===============================
+
+/**
+ * Format a number as a dollar currency string
+ * @param {number} n
+ * @returns {string}
+ */
+function loanFmt(n) {
+  return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+/**
+ * Calculate monthly payment using standard amortization formula
+ * @param {number} principal - Loan amount
+ * @param {number} annualRate - Annual interest rate as percentage
+ * @param {number} months - Total number of months
+ * @returns {number} Monthly payment amount
+ */
+function calcMonthlyPayment(principal, annualRate, months) {
+  if (annualRate === 0) return principal / months;
+  var r = annualRate / 100 / 12;
+  return principal * r * Math.pow(1 + r, months) / (Math.pow(1 + r, months) - 1);
+}
+
+/**
+ * Loan Calculator - calculates payment per period, total payment, and total interest
+ */
+function calcLoan() {
+  var principal = parseFloat(document.getElementById('loan-principal').value);
+  var rate = parseFloat(document.getElementById('loan-rate').value);
+  var termVal = parseFloat(document.getElementById('loan-term').value);
+  var termUnit = document.getElementById('loan-term-unit').value;
+  var freq = parseInt(document.getElementById('loan-freq').value);
+
+  if (isNaN(principal) || isNaN(rate) || isNaN(termVal) || principal <= 0 || termVal <= 0) {
+    document.getElementById('loan-result').style.display = 'none';
+    return;
+  }
+
+  var periods = termUnit === 'years' ? termVal * freq : termVal;
+  var periodRate = rate / 100 / freq;
+  var payment;
+
+  if (periodRate === 0) {
+    payment = principal / periods;
+  } else {
+    payment = principal * periodRate * Math.pow(1 + periodRate, periods) / (Math.pow(1 + periodRate, periods) - 1);
+  }
+
+  var total = payment * periods;
+  var interest = total - principal;
+  var principalPct = (principal / total * 100).toFixed(1);
+  var interestPct = (100 - parseFloat(principalPct)).toFixed(1);
+  var freqLabel = { '12': '/mo', '26': '/2wk', '52': '/wk', '1': '/yr' }[String(freq)] || '';
+
+  document.getElementById('loan-payment').textContent = loanFmt(payment) + freqLabel;
+  document.getElementById('loan-total').textContent = loanFmt(total);
+  document.getElementById('loan-interest').textContent = loanFmt(interest);
+  document.getElementById('loan-ratio').textContent = (interest / principal * 100).toFixed(1) + '%';
+  document.getElementById('loan-bar-principal').style.width = principalPct + '%';
+  document.getElementById('loan-bar-principal').textContent = 'Principal ' + principalPct + '%';
+  document.getElementById('loan-bar-interest').style.width = interestPct + '%';
+  document.getElementById('loan-bar-interest').textContent = 'Interest ' + interestPct + '%';
+  document.getElementById('loan-result').style.display = 'block';
+}
+
+/**
+ * Mortgage Calculator - calculates monthly P&I, PITI, total interest, and total cost
+ */
+function calcMortgage() {
+  var homePrice = parseFloat(document.getElementById('mort-home-price').value) || 0;
+  var down = parseFloat(document.getElementById('mort-down').value) || 0;
+  var rate = parseFloat(document.getElementById('mort-rate').value);
+  var termYears = parseInt(document.getElementById('mort-term').value);
+  var annualTax = parseFloat(document.getElementById('mort-tax').value) || 0;
+  var annualInsurance = parseFloat(document.getElementById('mort-insurance').value) || 0;
+
+  if (homePrice > 0) {
+    document.getElementById('mort-down-pct').textContent = (down / homePrice * 100).toFixed(1) + '%';
+  }
+
+  if (isNaN(rate) || homePrice <= 0 || down >= homePrice) {
+    document.getElementById('mort-result').style.display = 'none';
+    return;
+  }
+
+  var loanAmt = homePrice - down;
+  var months = termYears * 12;
+  var pi = calcMonthlyPayment(loanAmt, rate, months);
+  var totalPI = pi * months;
+  var totalInterest = totalPI - loanAmt;
+  var piti = pi + (annualTax + annualInsurance) / 12;
+  var totalCost = totalPI + down + annualTax * termYears + annualInsurance * termYears;
+
+  document.getElementById('mort-monthly-pi').textContent = loanFmt(pi);
+  document.getElementById('mort-monthly-total').textContent = loanFmt(piti);
+  document.getElementById('mort-total-interest').textContent = loanFmt(totalInterest);
+  document.getElementById('mort-total-cost').textContent = loanFmt(totalCost);
+  document.getElementById('mort-result').style.display = 'block';
+}
+
+/**
+ * Amortization Schedule - generates full month-by-month payment table
+ * Supports extra monthly payments and shows interest saved
+ */
+function calcAmortization() {
+  var principal = parseFloat(document.getElementById('amort-principal').value);
+  var rate = parseFloat(document.getElementById('amort-rate').value);
+  var termYears = parseFloat(document.getElementById('amort-term').value);
+  var extra = parseFloat(document.getElementById('amort-extra').value) || 0;
+
+  if (isNaN(principal) || isNaN(rate) || isNaN(termYears) || principal <= 0 || termYears <= 0) {
+    alert('Please fill in Loan Amount, Interest Rate, and Term.');
+    return;
+  }
+
+  var months = termYears * 12;
+  var basePayment = calcMonthlyPayment(principal, rate, months);
+  var standardTotalInterest = (basePayment * months) - principal;
+  var monthlyAmt = basePayment + extra;
+  var r = rate / 100 / 12;
+  var balance = principal;
+  var totalInterestPaid = 0;
+  var tbody = document.getElementById('amort-tbody');
+  tbody.innerHTML = '';
+  var month = 0;
+
+  while (balance > 0.005 && month < 1200) {
+    month++;
+    var interestCharge = balance * r;
+    var principalCharge = Math.min(monthlyAmt - interestCharge, balance);
+    if (principalCharge < 0) principalCharge = 0;
+    balance = Math.max(0, balance - principalCharge);
+    totalInterestPaid += interestCharge;
+
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td>' + month + '</td>' +
+      '<td>' + loanFmt(principalCharge + interestCharge) + '</td>' +
+      '<td>' + loanFmt(principalCharge) + '</td>' +
+      '<td>' + loanFmt(interestCharge) + '</td>' +
+      '<td>' + loanFmt(balance) + '</td>';
+    tbody.appendChild(tr);
+  }
+
+  var py = Math.floor(month / 12);
+  var pm = month % 12;
+
+  document.getElementById('amort-payment-display').textContent = loanFmt(monthlyAmt);
+  document.getElementById('amort-payoff-time').textContent = (py > 0 ? py + 'y ' : '') + pm + 'mo';
+  document.getElementById('amort-total-interest').textContent = loanFmt(totalInterestPaid);
+  document.getElementById('amort-interest-saved').textContent = extra > 0 ? loanFmt(Math.max(0, standardTotalInterest - totalInterestPaid)) : '—';
+  document.getElementById('amort-summary').style.display = 'block';
+  document.getElementById('amort-table-wrapper').style.display = 'block';
+}
