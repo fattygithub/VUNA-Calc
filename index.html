@@ -2112,6 +2112,186 @@
                             </div>
                             <!-- END Roman Numeral Converter Section -->
 
+                            <!-- ===== GRAPHING CALCULATOR ===== -->
+                            <div class="accordion-item">
+                              <h2 class="accordion-header" id="headingGraphing">
+                                <button
+                                  class="accordion-button collapsed d-flex justify-content-between align-items-center"
+                                  type="button" data-bs-toggle="collapse" data-bs-target="#collapseGraphing"
+                                  aria-expanded="false" aria-controls="collapseGraphing">
+                                  <span>📊Graphing Calculator</span>
+                                </button>
+                              </h2>
+                              <div id="collapseGraphing" class="accordion-collapse collapse" aria-labelledby="headingGraphing"
+                                data-bs-parent="#converterAccordion">
+                                <div class="accordion-body">
+                                  <p class="text-muted small mb-3">Plot functions, analyze graphs, and explore mathematical relationships with interactive visualization.</p>
+
+                                  <!-- Graph Controls -->
+                                  <div class="row mb-3">
+                                    <div class="col-md-8">
+                                      <label class="form-label small mb-1" style="font-weight:600;">Function</label>
+                                      <div class="input-group input-group-sm">
+                                        <input type="text" class="form-control" id="graph-function" placeholder="e.g., sin(x), x^2, sqrt(x)" value="sin(x)">
+                                        <button class="btn btn-success btn-sm" onclick="addFunction()" title="Add Function">➕</button>
+                                        <button class="btn btn-danger btn-sm" onclick="clearAllFunctions()" title="Clear All">🗑️</button>
+                                      </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                      <label class="form-label small mb-1" style="font-weight:600;">Color</label>
+                                      <select class="form-select form-select-sm" id="function-color">
+                                        <option value="#ff6b6b">Red</option>
+                                        <option value="#4ecdc4">Teal</option>
+                                        <option value="#45b7d1">Blue</option>
+                                        <option value="#96ceb4">Green</option>
+                                        <option value="#ffeaa7">Yellow</option>
+                                        <option value="#dda0dd">Plum</option>
+                                        <option value="#98d8c8">Mint</option>
+                                        <option value="#f7dc6f">Gold</option>
+                                      </select>
+                                    </div>
+                                  </div>
+
+                                  <!-- Function List -->
+                                  <div id="function-list" class="mb-3" style="display:none;">
+                                    <div class="small text-muted mb-2">Active Functions:</div>
+                                    <div id="function-items" class="d-flex flex-wrap gap-2"></div>
+                                  </div>
+
+                                  <!-- Graph Canvas -->
+                                  <div class="graph-container mb-3" style="position:relative;">
+                                    <canvas id="graph-canvas" width="800" height="500" style="border:1px solid #dee2e6; border-radius:8px; background:white; width:100%; max-width:800px; height:auto;"></canvas>
+
+                                    <!-- Graph Controls Overlay -->
+                                    <div class="graph-controls position-absolute top-0 end-0 p-2" style="z-index:10;">
+                                      <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-secondary btn-sm" onclick="zoomIn()" title="Zoom In">🔍+</button>
+                                        <button class="btn btn-outline-secondary btn-sm" onclick="zoomOut()" title="Zoom Out">🔍-</button>
+                                        <button class="btn btn-outline-secondary btn-sm" onclick="resetView()" title="Reset View">🏠</button>
+                                        <button class="btn btn-outline-secondary btn-sm" onclick="toggleGrid()" id="grid-toggle" title="Toggle Grid">⊞</button>
+                                      </div>
+                                    </div>
+
+                                    <!-- Coordinates Display -->
+                                    <div id="coordinates-display" class="position-absolute bottom-0 start-0 p-2 bg-light border rounded" style="font-size:12px; display:none;"></div>
+                                  </div>
+
+                                  <!-- Analysis Tools -->
+                                  <div class="row mb-3">
+                                    <div class="col-md-6">
+                                      <label class="form-label small mb-1" style="font-weight:600;">Analysis Point (x)</label>
+                                      <div class="input-group input-group-sm">
+                                        <input type="number" class="form-control" id="analysis-x" placeholder="0" step="0.1">
+                                        <button class="btn btn-info btn-sm" onclick="analyzePoint()">📊 Analyze</button>
+                                      </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                      <label class="form-label small mb-1" style="font-weight:600;">Find</label>
+                                      <div class="btn-group btn-group-sm w-100">
+                                        <button class="btn btn-outline-primary" onclick="findDerivative()">d/dx</button>
+                                        <button class="btn btn-outline-primary" onclick="findIntegral()">∫</button>
+                                        <button class="btn btn-outline-primary" onclick="findRoots()">Roots</button>
+                                        <button class="btn btn-outline-primary" onclick="findExtrema()">Min/Max</button>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <!-- Analysis Results -->
+                                  <div id="analysis-result" class="alert alert-info py-2 px-3 mb-3" style="display:none; font-size:0.9rem;">
+                                    <div class="row">
+                                      <div class="col-md-6">
+                                        <div><strong>Point:</strong> <span id="point-coords"></span></div>
+                                        <div><strong>Value:</strong> <span id="point-value"></span></div>
+                                      </div>
+                                      <div class="col-md-6">
+                                        <div><strong>Derivative:</strong> <span id="point-derivative"></span></div>
+                                        <div><strong>Analysis:</strong> <span id="point-analysis"></span></div>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <!-- Graph Settings -->
+                                  <div class="row mb-3">
+                                    <div class="col-md-3">
+                                      <label class="form-label small mb-1" style="font-weight:600;">X Min</label>
+                                      <input type="number" class="form-control form-control-sm" id="x-min" value="-10" step="1" onchange="updateGraph()">
+                                    </div>
+                                    <div class="col-md-3">
+                                      <label class="form-label small mb-1" style="font-weight:600;">X Max</label>
+                                      <input type="number" class="form-control form-control-sm" id="x-max" value="10" step="1" onchange="updateGraph()">
+                                    </div>
+                                    <div class="col-md-3">
+                                      <label class="form-label small mb-1" style="font-weight:600;">Y Min</label>
+                                      <input type="number" class="form-control form-control-sm" id="y-min" value="-10" step="1" onchange="updateGraph()">
+                                    </div>
+                                    <div class="col-md-3">
+                                      <label class="form-label small mb-1" style="font-weight:600;">Y Max</label>
+                                      <input type="number" class="form-control form-control-sm" id="y-max" value="10" step="1" onchange="updateGraph()">
+                                    </div>
+                                  </div>
+
+                                  <!-- Preset Functions -->
+                                  <div class="mb-3">
+                                    <label class="form-label small mb-1" style="font-weight:600;">Quick Functions</label>
+                                    <div class="d-flex flex-wrap gap-1">
+                                      <button class="btn btn-outline-secondary btn-sm" onclick="loadPreset('sin(x)')">sin(x)</button>
+                                      <button class="btn btn-outline-secondary btn-sm" onclick="loadPreset('cos(x)')">cos(x)</button>
+                                      <button class="btn btn-outline-secondary btn-sm" onclick="loadPreset('x^2')">x²</button>
+                                      <button class="btn btn-outline-secondary btn-sm" onclick="loadPreset('sqrt(x)')">√x</button>
+                                      <button class="btn btn-outline-secondary btn-sm" onclick="loadPreset('e^x')">eˣ</button>
+                                      <button class="btn btn-outline-secondary btn-sm" onclick="loadPreset('ln(x)')">ln(x)</button>
+                                      <button class="btn btn-outline-secondary btn-sm" onclick="loadPreset('1/x')">1/x</button>
+                                      <button class="btn btn-outline-secondary btn-sm" onclick="loadPreset('x^3')">x³</button>
+                                    </div>
+                                  </div>
+
+                                  <!-- Export Options -->
+                                  <div class="d-flex gap-2 mb-3">
+                                    <button class="btn btn-outline-primary btn-sm" onclick="exportGraph('png')">📷 Export PNG</button>
+                                    <button class="btn btn-outline-primary btn-sm" onclick="exportGraph('svg')">📄 Export SVG</button>
+                                    <button class="btn btn-outline-primary btn-sm" onclick="showTable()">📋 Table of Values</button>
+                                  </div>
+
+                                  <!-- Table of Values Modal -->
+                                  <div id="table-modal" class="modal fade" tabindex="-1">
+                                    <div class="modal-dialog modal-lg">
+                                      <div class="modal-content">
+                                        <div class="modal-header">
+                                          <h5 class="modal-title">Table of Values</h5>
+                                          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                          <div class="row mb-3">
+                                            <div class="col-md-4">
+                                              <label class="form-label small">Start X</label>
+                                              <input type="number" class="form-control" id="table-start" value="-5" step="0.5">
+                                            </div>
+                                            <div class="col-md-4">
+                                              <label class="form-label small">End X</label>
+                                              <input type="number" class="form-control" id="table-end" value="5" step="0.5">
+                                            </div>
+                                            <div class="col-md-4">
+                                              <label class="form-label small">Step</label>
+                                              <input type="number" class="form-control" id="table-step" value="0.5" step="0.1" min="0.1">
+                                            </div>
+                                          </div>
+                                          <button class="btn btn-primary mb-3" onclick="generateTable()">Generate Table</button>
+                                          <div id="table-content"></div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <!-- Help Text -->
+                                  <div class="alert alert-light py-2 px-3 mb-0 border" style="font-size: 0.85rem;">
+                                    <strong> Supported Functions:</strong> sin, cos, tan, asin, acos, atan, ln, log, exp, sqrt, abs, floor, ceil, round<br>
+                                    <strong> Operators:</strong> +, -, *, /, ^ (power), % (modulo)<br>
+                                    <strong> Tip:</strong> Use 'pi' for π and 'e' for Euler's number. Click and drag to pan, scroll to zoom.
+                                  </div>
+                                </div>
+                              </div>
+                            </div>                            
+
                             <!-- ===== LOAN & MORTGAGE CALCULATOR ===== -->
                             <div class="accordion-item">
                               <h2 class="accordion-header" id="headingLoan">
