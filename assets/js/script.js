@@ -4007,7 +4007,7 @@ function clearRomanConverter() {
   document.getElementById('roman-error').style.display     = 'none';
 }
 // ===============================
-// 🌍 IGBO TRANSLATION FEATURE
+// 🌍 ADVANCED IGBO TRANSLATION
 // ===============================
 
 function translateToIgbo() {
@@ -4017,37 +4017,7 @@ function translateToIgbo() {
 
   const number = parseInt(display);
 
-  const igboNumbers = {
-    0: "efu",
-    1: "otu",
-    2: "abụọ",
-    3: "atọ",
-    4: "anọ",
-    5: "ise",
-    6: "isii",
-    7: "asaa",
-    8: "asatọ",
-    9: "itoolu",
-    10: "iri",
-    11: "iri na otu",
-    12: "iri na abụọ",
-    13: "iri na atọ",
-    14: "iri na anọ",
-    15: "iri na ise",
-    16: "iri na isii",
-    17: "iri na asaa",
-    18: "iri na asatọ",
-    19: "iri na itoolu",
-    20: "iri abụọ"
-  };
-
-  let resultText = "";
-
-  if (igboNumbers[number] !== undefined) {
-    resultText = igboNumbers[number];
-  } else {
-    resultText = "Nọmba a dị elu (Igbo support limited)";
-  }
+  const resultText = numberToIgbo(number);
 
   const wordResult = document.getElementById("word-result");
   const wordArea = document.getElementById("word-area");
@@ -4058,4 +4028,55 @@ function translateToIgbo() {
     "</strong>";
 
   wordArea.style.display = "flex";
+}
+
+// ===============================
+// 🧠 NUMBER → IGBO CONVERTER
+// ===============================
+
+function numberToIgbo(num) {
+  if (num === 0) return "efu";
+
+  const ones = ["", "otu", "abụọ", "atọ", "anọ", "ise", "isii", "asaa", "asatọ", "itoolu"];
+  const tens = ["", "iri", "iri abụọ", "iri atọ", "iri anọ", "iri ise", "iri isii", "iri asaa", "iri asatọ", "iri itoolu"];
+
+  if (num < 10) return ones[num];
+
+  if (num < 20) return "iri na " + ones[num - 10];
+
+  if (num < 100) {
+    const ten = Math.floor(num / 10);
+    const unit = num % 10;
+
+    if (unit === 0) return tens[ten];
+    return tens[ten] + " na " + ones[unit];
+  }
+
+  if (num < 1000) {
+    const hundred = Math.floor(num / 100);
+    const remainder = num % 100;
+
+    let result = ones[hundred] + " narị";
+
+    if (remainder !== 0) {
+      result += " na " + numberToIgbo(remainder);
+    }
+
+    return result;
+  }
+
+  if (num < 1000000) {
+    const thousand = Math.floor(num / 1000);
+    const remainder = num % 1000;
+
+    let result = numberToIgbo(thousand) + " puku";
+
+    if (remainder !== 0) {
+      result += " na " + numberToIgbo(remainder);
+    }
+
+    return result;
+  }
+
+  return "Nọmba buru ibu";
 }
